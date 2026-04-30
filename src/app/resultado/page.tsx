@@ -48,10 +48,13 @@ export default async function ResultadoPage({ searchParams }: Props) {
 
   return (
     <>
-      <header className="border-b border-border">
-        <div className="mx-auto max-w-5xl px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <Activity className="h-5 w-5 text-brand-600" />
+      <header className="border-b border-border/60">
+        <div className="mx-auto max-w-5xl px-6 sm:px-8 h-16 flex items-center justify-between">
+          <Link
+            href="/"
+            className="flex items-center gap-2 font-medium tracking-tight"
+          >
+            <Activity className="h-4 w-4 text-brand-700" />
             <span>Triage Financiero</span>
           </Link>
           <div className="flex items-center gap-2">
@@ -77,88 +80,98 @@ export default async function ResultadoPage({ searchParams }: Props) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-10 space-y-12">
-        {/* Pulso patrimonial */}
-        <section>
-          <p className="text-sm text-muted-foreground">Tu pulso patrimonial</p>
-          <div className="mt-2 flex items-end gap-3">
-            <span className="text-7xl font-semibold tabular-nums leading-none text-foreground">
-              {resultado.scoreTotal}
-            </span>
-            <span className="text-2xl text-muted-foreground mb-2">/10</span>
-            <Badge
-              variant={
-                resultado.nivel === "Vulnerabilidad"
-                  ? "vulnerabilidad"
-                  : resultado.nivel === "Estabilidad"
-                    ? "estabilidad"
-                    : "optimizacion"
-              }
-              className="ml-3 mb-3"
-            >
-              {resultado.nivel}
-            </Badge>
+      <main className="mx-auto max-w-5xl px-6 sm:px-8 py-12 sm:py-16 space-y-16">
+        {/* Pulso patrimonial — momento dramático */}
+        <section className="relative">
+          <div
+            className="ecg-line absolute inset-x-0 top-1/2 -translate-y-1/2 h-[60px] -z-10 opacity-50"
+            aria-hidden="true"
+          />
+          <div className="grid lg:grid-cols-12 gap-8 items-end">
+            <div className="lg:col-span-7 space-y-4">
+              <p className="fade-up text-xs uppercase tracking-[0.2em] text-muted-foreground inline-flex items-center gap-2">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-brand-700 pulse-soft" />
+                Tu pulso patrimonial
+              </p>
+
+              <div className="count-up flex items-end gap-2 sm:gap-4 flex-wrap">
+                <span className="font-mono text-[8rem] sm:text-[10rem] lg:text-[12rem] font-medium tabular-nums leading-none text-foreground">
+                  {resultado.scoreTotal}
+                </span>
+                <div className="pb-4 sm:pb-6 lg:pb-8 space-y-2">
+                  <span className="block text-2xl sm:text-3xl font-mono text-muted-foreground">
+                    /10
+                  </span>
+                  <Badge
+                    variant={
+                      resultado.nivel === "Vulnerabilidad"
+                        ? "vulnerabilidad"
+                        : resultado.nivel === "Estabilidad"
+                          ? "estabilidad"
+                          : "optimizacion"
+                    }
+                  >
+                    {resultado.nivel}
+                  </Badge>
+                </div>
+              </div>
+
+              <h1 className="fade-up fade-up-delay-1 font-serif italic text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-[1.1] text-foreground pt-2">
+                {resultado.arquetipo.nombre}
+              </h1>
+              <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                {resultado.arquetipo.codigo}
+              </p>
+            </div>
+
+            {/* Mini grid de ejes */}
+            <aside className="lg:col-span-5 fade-up fade-up-delay-2">
+              <div className="border-l-2 border-brand-700/30 pl-6 space-y-6">
+                <EjeBox label="Liquidez" valor={resultado.liquidez} />
+                <EjeBox label="Diversificación" valor={resultado.diversificacion} />
+                <EjeBox label="Apalancamiento" valor={resultado.apalancamiento} />
+              </div>
+            </aside>
           </div>
-          <h1 className="mt-4 text-3xl sm:text-4xl font-semibold tracking-tight">
-            {resultado.arquetipo.nombre}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground font-mono">
-            {resultado.arquetipo.codigo}
-          </p>
         </section>
 
         {/* Tres cards: estado, perfil, prioridad */}
-        <section className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wide text-muted-foreground">
-                <AlertCircle className="h-4 w-4" />
-                Estado actual
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-base leading-relaxed">
-                {resultado.arquetipo.diagnostico}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wide text-muted-foreground">
-                <Target className="h-4 w-4" />
-                Perfil tipo
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-base leading-relaxed">
-                {resultado.arquetipo.ejemplo}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wide text-muted-foreground">
-                <TrendingUp className="h-4 w-4" />
-                Prioridad inmediata
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-base leading-relaxed">
-                {resultado.arquetipo.recomendacion}
-              </p>
-            </CardContent>
-          </Card>
+        <section className="grid gap-6 md:grid-cols-3 fade-up">
+          <DiagCard
+            icon={<AlertCircle className="h-4 w-4" />}
+            label="Estado actual"
+            text={resultado.arquetipo.diagnostico}
+          />
+          <DiagCard
+            icon={<Target className="h-4 w-4" />}
+            label="Perfil tipo"
+            text={resultado.arquetipo.ejemplo}
+          />
+          <DiagCard
+            icon={<TrendingUp className="h-4 w-4" />}
+            label="Prioridad inmediata"
+            text={resultado.arquetipo.recomendacion}
+          />
         </section>
 
         {/* Los 5 números */}
         <section>
-          <h2 className="text-2xl font-semibold tracking-tight">
-            Los 5 números que tienes que saber
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            3 sobre tu situación actual, 2 proyecciones a 10 años.
-          </p>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mb-8">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">
+              Tu situación en cifras
+            </p>
+            <h2 className="font-serif italic text-3xl sm:text-4xl tracking-tight leading-tight">
+              Los 5 números que
+              <br />
+              <span className="not-italic font-sans font-medium text-foreground/80">
+                tienes que saber.
+              </span>
+            </h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              3 sobre tu situación actual, 2 proyecciones a 10 años.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <NumeroCard icon={<Wallet className="h-5 w-5" />} numero="1" data={cinco.colchon} />
             <NumeroCard icon={<Coins className="h-5 w-5" />} numero="2" data={cinco.dependencia} />
             <NumeroCard icon={<TrendingUp className="h-5 w-5" />} numero="3" data={cinco.peaje} />
@@ -179,29 +192,39 @@ export default async function ResultadoPage({ searchParams }: Props) {
 
         {/* CTA — depende de auth state */}
         {user ? (
-          <section className="rounded-lg border-2 border-dashed border-brand-300 bg-brand-50/40 p-8 text-center">
-            <h3 className="text-2xl font-semibold tracking-tight">
-              Guarda este diagnóstico y desbloquea tu Plan 90 días
-            </h3>
-            <p className="mt-2 text-muted-foreground max-w-xl mx-auto leading-relaxed">
-              Claude Sonnet escribe 12 semanas con una acción concreta por semana,
-              calibrada a tu arquetipo. Se guarda automáticamente en tu cuenta
-              junto al historial de pulsos para medir tu evolución.
+          <section className="rounded-lg border-2 border-brand-200 bg-brand-50/40 p-8 sm:p-12 text-center">
+            <p className="text-xs uppercase tracking-[0.2em] text-brand-700 mb-3">
+              Próximo paso
             </p>
-            <div className="mt-6 flex justify-center">
+            <h3 className="font-serif italic text-3xl sm:text-4xl tracking-tight leading-tight">
+              Guarda este diagnóstico,
+              <br />
+              <span className="not-italic font-sans font-medium text-foreground/80">
+                desbloquea tu Plan 90 días.
+              </span>
+            </h3>
+            <p className="mt-4 text-muted-foreground max-w-xl mx-auto leading-relaxed">
+              Claude Sonnet escribe 12 semanas con una acción concreta por semana,
+              calibrada a tu arquetipo. Se guarda en tu cuenta junto al historial
+              de pulsos para medir evolución.
+            </p>
+            <div className="mt-8 flex justify-center">
               <GuardarButton encoded={r} />
             </div>
           </section>
         ) : (
-          <section className="rounded-lg border-2 border-dashed border-border bg-muted/30 p-8 text-center">
-            <h3 className="text-2xl font-semibold tracking-tight">
-              Guarda tu progreso
+          <section className="rounded-lg border-2 border-border bg-paper-soft/40 p-8 sm:p-12 text-center">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">
+              Próximo paso
+            </p>
+            <h3 className="font-serif italic text-3xl sm:text-4xl tracking-tight leading-tight">
+              Guarda tu progreso.
             </h3>
-            <p className="mt-2 text-muted-foreground max-w-xl mx-auto leading-relaxed">
+            <p className="mt-4 text-muted-foreground max-w-xl mx-auto leading-relaxed">
               Crea tu cuenta gratis y vuelve a medir tu pulso cada 30 días para
               ver cómo evoluciona. Sin contraseñas, solo tu email.
             </p>
-            <div className="mt-6 flex items-center justify-center gap-3">
+            <div className="mt-8 flex items-center justify-center gap-3">
               <Button asChild size="lg">
                 <Link
                   href={`/login?next=${encodeURIComponent(`/resultado?r=${r}`)}`}
@@ -213,7 +236,7 @@ export default async function ResultadoPage({ searchParams }: Props) {
                 <Link href="/">Volver al inicio</Link>
               </Button>
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">
+            <p className="mt-4 text-xs text-muted-foreground">
               Sin tarjeta · Sin spam · Cancela cuando quieras
             </p>
           </section>
@@ -225,6 +248,64 @@ export default async function ResultadoPage({ searchParams }: Props) {
         </section>
       </main>
     </>
+  );
+}
+
+function EjeBox({
+  label,
+  valor,
+}: {
+  label: string;
+  valor: 1 | 2 | 3;
+}) {
+  const dotsBase = "inline-block h-2 w-2 rounded-full";
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+        {label}
+      </p>
+      <div className="mt-2 flex items-center gap-3">
+        <span className="font-mono text-3xl font-medium tabular-nums text-foreground">
+          {valor}
+          <span className="text-base text-muted-foreground">/3</span>
+        </span>
+        <div className="flex gap-1">
+          {[1, 2, 3].map((n) => (
+            <span
+              key={n}
+              className={cn(
+                dotsBase,
+                n <= valor ? "bg-brand-700" : "bg-rule",
+              )}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DiagCard({
+  icon,
+  label,
+  text,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  text: string;
+}) {
+  return (
+    <Card className="bg-card border-border/80">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground font-medium">
+          {icon}
+          {label}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-base leading-relaxed">{text}</p>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -245,10 +326,12 @@ function NumeroCard({
     verde: "text-brand-700 bg-brand-50 border-brand-200",
   };
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-mono text-muted-foreground">#{numero}</span>
+    <Card className="bg-card border-border/80">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <span className="font-mono text-xs tracking-widest text-muted-foreground">
+            №{numero}
+          </span>
           <div
             className={cn(
               "inline-flex h-9 w-9 items-center justify-center rounded-md border",
@@ -258,15 +341,19 @@ function NumeroCard({
             {icon}
           </div>
         </div>
-        <CardTitle className="text-sm font-medium text-muted-foreground mt-2">
+        <CardTitle className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-medium mt-3">
           {data.etiqueta}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-3xl font-semibold tabular-nums tracking-tight">{data.valor}</p>
-        <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{data.detalle}</p>
+        <p className="font-mono text-3xl font-medium tabular-nums tracking-tight text-foreground">
+          {data.valor}
+        </p>
+        <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+          {data.detalle}
+        </p>
         {proyeccion && (
-          <p className="mt-3 text-[10px] uppercase tracking-wider text-muted-foreground">
+          <p className="mt-4 text-[10px] uppercase tracking-widest text-muted-foreground">
             Proyección a 10 años · ±30%
           </p>
         )}

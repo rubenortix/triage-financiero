@@ -1,10 +1,27 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+/* Body — Geist tiene personalidad sin caer en Inter */
+const geist = Geist({
+  variable: "--font-geist",
   subsets: ["latin", "latin-ext"],
+  display: "swap",
+});
+
+/* Mono — números, códigos de arquetipo, datos tabulares */
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+/* Headings — Instrument Serif italic da el aire editorial médico */
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-serif",
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
   display: "swap",
 });
 
@@ -31,7 +48,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className={`${inter.variable} h-full`}>
+    <html
+      lang="es"
+      className={`${geist.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full`}
+    >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

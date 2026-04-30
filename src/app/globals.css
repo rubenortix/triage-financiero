@@ -2,56 +2,68 @@
 
 /* ============================================
    Triage Financiero — Sistema de diseño
-   Paleta médica con tokens de marca y tema
+   Editorial médico premium
    ============================================ */
 
 @theme {
-  /* Colores de marca */
+  /* Colores de marca — verde médico profundo */
   --color-brand-50: #ecfdf5;
   --color-brand-100: #d1fae5;
   --color-brand-200: #a7f3d0;
   --color-brand-300: #6ee7b7;
   --color-brand-400: #34d399;
   --color-brand-500: #10b981;
-  --color-brand-600: #047857; /* primario */
-  --color-brand-700: #065f46;
-  --color-brand-800: #064e3b;
-  --color-brand-900: #022c22;
+  --color-brand-600: #047857;
+  --color-brand-700: #064e3b; /* primario — más lujoso que el 600 */
+  --color-brand-800: #022c22;
+  --color-brand-900: #021915;
 
-  /* Color de alerta (rojo pulso) */
+  /* Color de alerta — pulso */
   --color-pulse-50: #fef2f2;
   --color-pulse-100: #fee2e2;
+  --color-pulse-200: #fecaca;
   --color-pulse-500: #ef4444;
-  --color-pulse-600: #dc2626; /* alerta */
+  --color-pulse-600: #dc2626;
   --color-pulse-700: #b91c1c;
 
   /* Color signo vital amarillo */
   --color-vital-50: #fefce8;
   --color-vital-100: #fef9c3;
+  --color-vital-200: #fde68a;
   --color-vital-500: #eab308;
-  --color-vital-600: #ca8a04; /* secundario */
+  --color-vital-600: #ca8a04;
   --color-vital-700: #a16207;
 
   /* Niveles diagnósticos */
   --color-vulnerabilidad: var(--color-pulse-600);
   --color-estabilidad: var(--color-vital-600);
-  --color-optimizacion: var(--color-brand-600);
+  --color-optimizacion: var(--color-brand-700);
 
-  /* Tipografía */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, monospace;
+  /* Tipografía — pareja deliberada
+     - Serif italic para titulares con autoridad editorial
+     - Geist sans para body (carácter sin caer en Inter)
+     - Mono para números, códigos, datos tabulares */
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-serif), ui-serif, Georgia, serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  /* Tokens semánticos light */
-  --color-background: #ffffff;
-  --color-foreground: #0a0a0a;
-  --color-muted: #f4f4f5;
-  --color-muted-foreground: #71717a;
-  --color-border: #e4e4e7;
+  /* Tokens semánticos — paper cream en vez de blanco puro */
+  --color-paper: #faf7f0;            /* fondo principal */
+  --color-paper-soft: #f4efe3;       /* fondos secundarios */
+  --color-ink: #14110d;               /* texto principal — casi negro pero tierra */
+  --color-ink-soft: #57534e;         /* texto subordinado */
+  --color-rule: #e7e0cf;             /* separadores */
+
+  --color-background: var(--color-paper);
+  --color-foreground: var(--color-ink);
+  --color-muted: var(--color-paper-soft);
+  --color-muted-foreground: var(--color-ink-soft);
+  --color-border: var(--color-rule);
   --color-card: #ffffff;
-  --color-card-foreground: #0a0a0a;
-  --color-primary: var(--color-brand-600);
-  --color-primary-foreground: #ffffff;
-  --color-secondary: var(--color-vital-600);
+  --color-card-foreground: var(--color-ink);
+  --color-primary: var(--color-brand-700);
+  --color-primary-foreground: var(--color-paper);
+  --color-secondary: var(--color-vital-700);
   --color-secondary-foreground: #ffffff;
   --color-destructive: var(--color-pulse-600);
   --color-destructive-foreground: #ffffff;
@@ -63,16 +75,16 @@
   --radius-xl: 1rem;
 }
 
-/* Modo oscuro */
+/* Modo oscuro — más sobrio */
 @media (prefers-color-scheme: dark) {
   @theme {
-    --color-background: #0a0a0a;
-    --color-foreground: #fafafa;
-    --color-muted: #18181b;
-    --color-muted-foreground: #a1a1aa;
-    --color-border: #27272a;
-    --color-card: #09090b;
-    --color-card-foreground: #fafafa;
+    --color-background: #0f0d0a;
+    --color-foreground: #f4efe3;
+    --color-muted: #1a1714;
+    --color-muted-foreground: #a8a299;
+    --color-border: #2a2620;
+    --color-card: #14110d;
+    --color-card-foreground: #f4efe3;
   }
 }
 
@@ -86,10 +98,79 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.005em;
+}
+
+/* ECG / pulso como motivo visual sutil */
+.ecg-grid {
+  background-image:
+    linear-gradient(to right, rgba(6, 78, 59, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(6, 78, 59, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.ecg-line {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 60' fill='none' stroke='%23064e3b' stroke-width='2' opacity='0.18'%3E%3Cpath d='M0 30 L120 30 L150 30 L165 12 L180 50 L195 18 L210 30 L400 30 L430 30 L445 12 L460 50 L475 18 L490 30 L800 30'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-position: center;
+  background-size: 800px 60px;
 }
 
 /* Selección con verde de marca */
 ::selection {
   background: var(--color-brand-100);
-  color: var(--color-brand-900);
+  color: var(--color-brand-800);
+}
+
+/* Page-load fade-up sutil */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-up {
+  animation: fade-up 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.fade-up-delay-1 { animation-delay: 100ms; }
+.fade-up-delay-2 { animation-delay: 200ms; }
+.fade-up-delay-3 { animation-delay: 300ms; }
+
+/* Pulso animation para el indicador de status */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.pulse-soft {
+  animation: pulse-soft 2.4s ease-in-out infinite;
+}
+
+/* Counter for the score */
+@keyframes count-up {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.count-up {
+  animation: count-up 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .fade-up, .count-up, .pulse-soft {
+    animation: none;
+  }
 }
