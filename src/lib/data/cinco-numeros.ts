@@ -2,11 +2,11 @@
  * "Los 5 Números que tienes que saber" — bloque visual clave de /resultado.
  * Fuente de verdad: Triage_Mapa_Diagnostico.xlsx hoja "Los 5 Números".
  *
- * #1 — Tu Colchón:    meses de gastos cubiertos (de P3)
- * #2 — Tu Dependencia: % patrimonio en un solo activo (de P5+P6)
- * #3 — Tu Peaje:      % ingresos en deudas (de P8)
- * #4 — Costo de no actuar: USD perdidos en 10 años (de score total)
- * #5 — Si actúas hoy: USD ganados en 10 años (de score total)
+ * #1 — Tu Colchón:    meses de gastos cubiertos (de Q3)
+ * #2 — Tu Dependencia: % patrimonio expuesto a un solo activo (de Q6)
+ * #3 — Tu Peaje:      % ingresos en deudas (de Q8)
+ * #4 — Costo de no actuar: USD perdidos en 10 años (de scoreTotal)
+ * #5 — Si actúas hoy: USD ganados en 10 años (de scoreTotal)
  *
  * Disclaimer: estas son estimaciones basadas en patrones patrimoniales
  * de médicos con perfil similar. Retorno real esperado 7%, inflación 3%.
@@ -32,7 +32,7 @@ export interface CincoNumeros {
   siActuasHoy: NumeroResultado;
 }
 
-// ============== #1 — Tu Colchón ==============
+// ============== #1 — Tu Colchón (de Q3) ==============
 
 const COLCHON: Record<OpcionLetra, { meses: number; display: string; color: Color }> = {
   a: { meses: 0.5, display: "menos de 1 mes", color: "rojo" },
@@ -40,24 +40,18 @@ const COLCHON: Record<OpcionLetra, { meses: number; display: string; color: Colo
   c: { meses: 5, display: "5+ meses", color: "verde" },
 };
 
-// ============== #2 — Tu Dependencia ==============
+// ============== #2 — Tu Dependencia (de Q6 — concentración real) ==============
+// Q6: si tu activo más grande pierde 50%, ¿qué % de patrimonio perderías?
+// Esto es la métrica DIRECTA de concentración. Antes mezclábamos con Q5
+// (cuántos tipos de activo) que es una proxy débil.
 
-const DEPENDENCIA: Record<string, { pct: number; color: Color }> = {
-  // P5 letra a → no importa P6, todo concentrado
-  "a-a": { pct: 85, color: "rojo" },
-  "a-b": { pct: 85, color: "rojo" },
-  "a-c": { pct: 85, color: "rojo" },
-  // P5 = b
-  "b-a": { pct: 65, color: "rojo" },
-  "b-b": { pct: 45, color: "amarillo" },
-  "b-c": { pct: 30, color: "amarillo" },
-  // P5 = c
-  "c-a": { pct: 40, color: "amarillo" },
-  "c-b": { pct: 25, color: "verde" },
-  "c-c": { pct: 15, color: "verde" },
+const DEPENDENCIA: Record<OpcionLetra, { pct: number; color: Color }> = {
+  a: { pct: 70, color: "rojo" },     // >60% perdido → altísima concentración
+  b: { pct: 45, color: "amarillo" }, // 30-60% perdido → concentración media
+  c: { pct: 20, color: "verde" },    // <30% perdido → bien diversificado
 };
 
-// ============== #3 — Tu Peaje ==============
+// ============== #3 — Tu Peaje (de Q8) ==============
 
 const PEAJE: Record<OpcionLetra, { pct: number; color: Color }> = {
   a: { pct: 50, color: "rojo" },
@@ -65,7 +59,7 @@ const PEAJE: Record<OpcionLetra, { pct: number; color: Color }> = {
   c: { pct: 10, color: "verde" },
 };
 
-// ============== #4 #5 — Proyecciones a 10 años ==============
+// ============== #4 #5 — Proyecciones a 10 años (de scoreTotal) ==============
 
 interface Proyeccion {
   costoNoActuar: number;
@@ -102,14 +96,13 @@ function formatUSD(n: number): string {
 
 export function calcularCincoNumeros(args: {
   q3: OpcionLetra;
-  q5: OpcionLetra;
   q6: OpcionLetra;
   q8: OpcionLetra;
   scoreTotal: number;
 }): CincoNumeros {
-  const { q3, q5, q6, q8, scoreTotal } = args;
+  const { q3, q6, q8, scoreTotal } = args;
 
-  // Colchón
+  // Colchón (de Q3)
   const c = COLCHON[q3];
   const colchon: NumeroResultado = {
     etiqueta: "Tu colchón",
@@ -123,9 +116,8 @@ export function calcularCincoNumeros(args: {
     color: c.color,
   };
 
-  // Dependencia
-  const depKey = `${q5}-${q6}`;
-  const d = DEPENDENCIA[depKey] ?? { pct: 50, color: "amarillo" as Color };
+  // Dependencia (de Q6 — concentración real)
+  const d = DEPENDENCIA[q6];
   const dependencia: NumeroResultado = {
     etiqueta: "Tu dependencia",
     valor: `${d.pct}%`,
@@ -138,7 +130,7 @@ export function calcularCincoNumeros(args: {
     color: d.color,
   };
 
-  // Peaje
+  // Peaje (de Q8)
   const p = PEAJE[q8];
   const peaje: NumeroResultado = {
     etiqueta: "Tu peaje mensual",
@@ -152,7 +144,7 @@ export function calcularCincoNumeros(args: {
     color: p.color,
   };
 
-  // Proyecciones
+  // Proyecciones (de scoreTotal)
   const proy =
     PROYECCIONES_POR_SCORE[Math.max(0, Math.min(10, Math.round(scoreTotal)))] ??
     PROYECCIONES_POR_SCORE[5];

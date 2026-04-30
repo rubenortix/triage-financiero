@@ -187,18 +187,19 @@ export const PREGUNTAS: readonly Pregunta[] = [
   {
     id: 10,
     categoria: "Apalancamiento",
-    pregunta: "Si necesitaras crédito hoy, ¿cómo te verían los bancos?",
+    pregunta:
+      "Aproximadamente, ¿qué proporción es tu deuda total respecto a tu patrimonio?",
     eje: "apalancamiento",
     opciones: [
-      { letra: "a", texto: "Me costaría o me saldría caro", puntos: 1 },
+      { letra: "a", texto: "Más del 60% (deuda alta vs patrimonio)", puntos: 1 },
       {
         letra: "b",
-        texto: "Me darían pero no en mejores condiciones",
+        texto: "Entre 30% y 60%",
         puntos: 2,
       },
       {
         letra: "c",
-        texto: "Soy sujeto de crédito preferencial",
+        texto: "Menos del 30%, o no tengo deudas",
         puntos: 3,
       },
     ],

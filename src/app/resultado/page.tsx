@@ -36,7 +36,6 @@ export default async function ResultadoPage({ searchParams }: Props) {
   const resultado = calcularDiagnostico(respuestas);
   const cinco = calcularCincoNumeros({
     q3: respuestas.q3,
-    q5: respuestas.q5,
     q6: respuestas.q6,
     q8: respuestas.q8,
     scoreTotal: resultado.scoreTotal,

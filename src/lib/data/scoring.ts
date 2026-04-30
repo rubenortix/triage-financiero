@@ -2,11 +2,17 @@
  * Lógica de scoring del diagnóstico Triage.
  * Fuente de verdad: Triage_Mapa_Diagnostico.xlsx hoja "Lógica de Scoring".
  *
- * Cada eje (liquidez, diversificación, apalancamiento) se calcula como el
- * promedio redondeado de sus 3 preguntas asociadas (que valen 1, 2 o 3 pts cada una),
- * resultando en un valor 1-3 que se usa para mapear al arquetipo correcto.
+ * Cada eje (liquidez, diversificación, apalancamiento) se calcula sumando
+ * sus 3 preguntas (1-3 pts cada una, total 3-9) y mapeando con thresholds
+ * asimétricos a un valor 1-3 que se usa para identificar el arquetipo.
  *
- * El score total se normaliza a una escala 0-10 ("Pulso patrimonial").
+ * Antes usábamos Math.round(sum/3), que colapsaba sumas {5,6,7} en eje=2 y
+ * concentraba ~70% de usuarios en archetipos centrales. Los nuevos thresholds
+ * distribuyen mejor.
+ *
+ * El score total se normaliza a 0-10 ("Pulso patrimonial") y de ahí se
+ * deriva el nivel (Vulnerabilidad/Estabilidad/Optimización), garantizando
+ * coherencia entre el badge y el número que ve el usuario.
  */
 
 import type { OpcionLetra } from "./preguntas-diagnostico";
@@ -38,6 +44,7 @@ export interface ResultadoDiagnostico {
   apalancamiento: 1 | 2 | 3;
   /** Pulso patrimonial 0-10 */
   scoreTotal: number;
+  /** Derivado del scoreTotal para garantizar coherencia con el número */
   nivel: Nivel;
   arquetipo: Arquetipo;
   etapaCarrera: EtapaCarrera;
@@ -49,14 +56,42 @@ const ETAPA_POR_LETRA: Record<OpcionLetra, EtapaCarrera> = {
   c: "senior",
 };
 
-function ejeDe(p1: OpcionLetra, p2: OpcionLetra, p3: OpcionLetra, ids: [number, number, number]): 1 | 2 | 3 {
+/**
+ * Mapea la suma de 3 preguntas (rango 3-9) a un eje 1/2/3 con thresholds
+ * asimétricos. Distribución bajo respuestas uniformes random:
+ *   eje 1: 37% (sumas 3-5)
+ *   eje 2: 26% (suma 6 — promedio puro)
+ *   eje 3: 37% (sumas 7-9)
+ */
+function ejeDe(
+  p1: OpcionLetra,
+  p2: OpcionLetra,
+  p3: OpcionLetra,
+  ids: [number, number, number],
+): 1 | 2 | 3 {
   const sum =
     (puntosDe(ids[0], p1) ?? 0) +
     (puntosDe(ids[1], p2) ?? 0) +
     (puntosDe(ids[2], p3) ?? 0);
-  // sum ∈ [3, 9] → mapeo a 1-3 con redondeo
-  const eje = Math.round(sum / 3);
-  return Math.max(1, Math.min(3, eje)) as 1 | 2 | 3;
+
+  if (sum <= 5) return 1;
+  if (sum === 6) return 2;
+  return 3;
+}
+
+/**
+ * Deriva el nivel del scoreTotal. La tabla del playbook:
+ *   0-4  → Vulnerabilidad
+ *   5-7  → Estabilidad
+ *   8-10 → Optimización
+ *
+ * Antes mostrábamos `arquetipo.nivel` (hardcoded), que a veces contradecía
+ * el scoreTotal mostrado. Ahora se derivan ambos del mismo origen.
+ */
+export function nivelDeScore(score: number): Nivel {
+  if (score <= 4) return "Vulnerabilidad";
+  if (score <= 7) return "Estabilidad";
+  return "Optimización";
 }
 
 export function calcularDiagnostico(r: RespuestasDiagnostico): ResultadoDiagnostico {
@@ -66,8 +101,7 @@ export function calcularDiagnostico(r: RespuestasDiagnostico): ResultadoDiagnost
 
   const arquetipo = findArquetipo(liquidez, diversificacion, apalancamiento);
 
-  // Score total normalizado a 0-10
-  // Suma de ejes va de 3 (peor) a 9 (mejor) → ((sum - 3) / 6) * 10
+  // Score total normalizado a 0-10. Suma de ejes va de 3 (peor) a 9 (mejor).
   const sumaEjes = liquidez + diversificacion + apalancamiento;
   const scoreTotal = Math.round(((sumaEjes - 3) / 6) * 10);
 
@@ -76,7 +110,7 @@ export function calcularDiagnostico(r: RespuestasDiagnostico): ResultadoDiagnost
     diversificacion,
     apalancamiento,
     scoreTotal,
-    nivel: arquetipo.nivel,
+    nivel: nivelDeScore(scoreTotal),
     arquetipo,
     etapaCarrera: ETAPA_POR_LETRA[r.q1],
   };
