@@ -77,7 +77,8 @@ export async function generarPlan90Dias(
     };
   }
 
-  // Llama a Claude Sonnet con prompt caching del system
+  // Llama a Claude Sonnet usando tool_use para garantizar JSON estructurado
+  // (más robusto que parsear texto libre que puede traer comentarios)
   let semanas: SemanaPlan[];
   try {
     const anthropic = getAnthropic();
@@ -92,6 +93,49 @@ export async function generarPlan90Dias(
           cache_control: { type: "ephemeral" },
         },
       ],
+      tools: [
+        {
+          name: "guardar_plan_90_dias",
+          description:
+            "Guarda el plan de 12 semanas generado para el usuario. Llama esta herramienta con las 12 semanas estructuradas.",
+          input_schema: {
+            type: "object",
+            properties: {
+              semanas: {
+                type: "array",
+                minItems: 12,
+                maxItems: 12,
+                items: {
+                  type: "object",
+                  properties: {
+                    semana: {
+                      type: "integer",
+                      minimum: 1,
+                      maximum: 12,
+                      description: "Número de semana (1-12)",
+                    },
+                    titulo: {
+                      type: "string",
+                      description: "Título corto de la semana, máximo 50 caracteres",
+                    },
+                    descripcion: {
+                      type: "string",
+                      description: "Descripción de 2-3 frases sobre qué hacer y por qué",
+                    },
+                    metricaExito: {
+                      type: "string",
+                      description: "Frase concreta y medible que indica que la semana se completó",
+                    },
+                  },
+                  required: ["semana", "titulo", "descripcion", "metricaExito"],
+                },
+              },
+            },
+            required: ["semanas"],
+          },
+        },
+      ],
+      tool_choice: { type: "tool", name: "guardar_plan_90_dias" },
       messages: [
         {
           role: "user",
@@ -100,27 +144,23 @@ export async function generarPlan90Dias(
       ],
     });
 
-    const text = response.content
-      .map((c) => (c.type === "text" ? c.text : ""))
-      .join("")
-      .trim();
-
-    // Limpia markdown fences si la IA los puso
-    const cleaned = text
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/\s*```$/i, "")
-      .trim();
-
-    const parsed = JSON.parse(cleaned);
-
-    if (!Array.isArray(parsed) || parsed.length !== 12) {
+    const toolUse = response.content.find((c) => c.type === "tool_use");
+    if (!toolUse || toolUse.type !== "tool_use") {
       return {
         status: "error",
-        error: "La IA no devolvió un array de 12 semanas. Reintenta.",
+        error: "La IA no devolvió la estructura esperada. Reintenta.",
       };
     }
 
-    semanas = parsed as SemanaPlan[];
+    const input = toolUse.input as { semanas?: SemanaPlan[] };
+    if (!Array.isArray(input.semanas) || input.semanas.length !== 12) {
+      return {
+        status: "error",
+        error: "La IA no devolvió 12 semanas. Reintenta.",
+      };
+    }
+
+    semanas = input.semanas;
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Error desconocido";
     return { status: "error", error: `Falló la generación: ${msg}` };
