@@ -179,13 +179,14 @@ export default async function ResultadoPage({ searchParams }: Props) {
 
         {/* CTA — depende de auth state */}
         {user ? (
-          <section className="rounded-lg border-2 border-dashed border-border bg-muted/30 p-8 text-center">
+          <section className="rounded-lg border-2 border-dashed border-brand-300 bg-brand-50/40 p-8 text-center">
             <h3 className="text-2xl font-semibold tracking-tight">
-              Guarda este resultado
+              Guarda este diagnóstico y desbloquea tu Plan 90 días
             </h3>
             <p className="mt-2 text-muted-foreground max-w-xl mx-auto leading-relaxed">
-              Lo verás en tu dashboard junto a tus próximos rediagnósticos para
-              medir tu evolución.
+              Claude Sonnet escribe 12 semanas con una acción concreta por semana,
+              calibrada a tu arquetipo. Se guarda automáticamente en tu cuenta
+              junto al historial de pulsos para medir tu evolución.
             </p>
             <div className="mt-6 flex justify-center">
               <GuardarButton encoded={r} />
@@ -217,22 +218,6 @@ export default async function ResultadoPage({ searchParams }: Props) {
             </p>
           </section>
         )}
-
-        {/* Plan 90 días — preview bloqueado */}
-        <section className="rounded-lg border border-border bg-card p-8 text-center">
-          <h3 className="text-2xl font-semibold tracking-tight">
-            Tu Plan 90 días personalizado
-          </h3>
-          <p className="mt-2 text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            12 semanas, una acción concreta cada semana, generadas por IA según
-            tu arquetipo. Disponible próximamente en el plan Pro.
-          </p>
-          <div className="mt-6">
-            <Button size="lg" disabled>
-              Próximamente · $29/mes
-            </Button>
-          </div>
-        </section>
 
         {/* Disclaimer */}
         <section className="text-xs text-muted-foreground border-t border-border pt-6">

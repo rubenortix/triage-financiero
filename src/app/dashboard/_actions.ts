@@ -3,23 +3,18 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getAnthropic, MODELS } from "@/lib/anthropic";
-import { PROMPT_PLAN_90_DIAS } from "@/lib/data/prompts-ia";
-import { getArquetipoById } from "@/lib/data/arquetipos";
-import type { Json } from "@/lib/types/database";
+import { generarPlan90Dias as generarPlanCore } from "@/lib/ia/generar-plan-90-dias";
 
 export type GenerarPlanState =
   | { status: "idle" }
   | { status: "ok"; planId: string }
   | { status: "error"; error: string };
 
-interface SemanaPlan {
-  semana: number;
-  titulo: string;
-  descripcion: string;
-  metricaExito: string;
-}
-
+/**
+ * Server Action que envuelve la generación del Plan 90 días.
+ * La lógica de IA + persistencia vive en `@/lib/ia/generar-plan-90-dias.ts`
+ * para que también pueda invocarse desde el flujo de "guardar diagnóstico".
+ */
 export async function generarPlan90Dias(
   _prev: GenerarPlanState,
   formData: FormData,
@@ -49,12 +44,7 @@ export async function generarPlan90Dias(
     return { status: "error", error: "Diagnóstico no encontrado" };
   }
 
-  const arquetipo = getArquetipoById(diagnostico.arquetipo_id);
-  if (!arquetipo) {
-    return { status: "error", error: "Arquetipo inválido" };
-  }
-
-  // Lee contexto del profile
+  // Lee contexto del profile (etapa carrera, país)
   type ProfileLite = {
     pais: string | null;
     etapa_carrera: "residente" | "consolidado" | "senior" | null;
@@ -65,127 +55,19 @@ export async function generarPlan90Dias(
     .eq("id", user.id)
     .single<ProfileLite>();
 
-  const etapa = profile?.etapa_carrera ?? "consolidado";
-  const pais = profile?.pais ?? "Latinoamérica";
+  const result = await generarPlanCore({
+    userId: user.id,
+    diagnosticoId: diagnostico.id,
+    arquetipoId: diagnostico.arquetipo_id,
+    etapa: profile?.etapa_carrera ?? "consolidado",
+    pais: profile?.pais ?? "Latinoamérica",
+    supabase,
+  });
 
-  // Verifica que la API key esté configurada antes de llamar
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return {
-      status: "error",
-      error:
-        "ANTHROPIC_API_KEY no configurada. Agrégala a .env.local y reinicia el dev server.",
-    };
-  }
-
-  // Llama a Claude Sonnet usando tool_use para garantizar JSON estructurado
-  // (más robusto que parsear texto libre que puede traer comentarios)
-  let semanas: SemanaPlan[];
-  try {
-    const anthropic = getAnthropic();
-    const response = await anthropic.messages.create({
-      model: MODELS.sonnet,
-      max_tokens: 4096,
-      temperature: 0.7,
-      system: [
-        {
-          type: "text",
-          text: PROMPT_PLAN_90_DIAS.system,
-          cache_control: { type: "ephemeral" },
-        },
-      ],
-      tools: [
-        {
-          name: "guardar_plan_90_dias",
-          description:
-            "Guarda el plan de 12 semanas generado para el usuario. Llama esta herramienta con las 12 semanas estructuradas.",
-          input_schema: {
-            type: "object",
-            properties: {
-              semanas: {
-                type: "array",
-                minItems: 12,
-                maxItems: 12,
-                items: {
-                  type: "object",
-                  properties: {
-                    semana: {
-                      type: "integer",
-                      minimum: 1,
-                      maximum: 12,
-                      description: "Número de semana (1-12)",
-                    },
-                    titulo: {
-                      type: "string",
-                      description: "Título corto de la semana, máximo 50 caracteres",
-                    },
-                    descripcion: {
-                      type: "string",
-                      description: "Descripción de 2-3 frases sobre qué hacer y por qué",
-                    },
-                    metricaExito: {
-                      type: "string",
-                      description: "Frase concreta y medible que indica que la semana se completó",
-                    },
-                  },
-                  required: ["semana", "titulo", "descripcion", "metricaExito"],
-                },
-              },
-            },
-            required: ["semanas"],
-          },
-        },
-      ],
-      tool_choice: { type: "tool", name: "guardar_plan_90_dias" },
-      messages: [
-        {
-          role: "user",
-          content: PROMPT_PLAN_90_DIAS.buildUser({ arquetipo, etapa, pais }),
-        },
-      ],
-    });
-
-    const toolUse = response.content.find((c) => c.type === "tool_use");
-    if (!toolUse || toolUse.type !== "tool_use") {
-      return {
-        status: "error",
-        error: "La IA no devolvió la estructura esperada. Reintenta.",
-      };
-    }
-
-    const input = toolUse.input as { semanas?: SemanaPlan[] };
-    if (!Array.isArray(input.semanas) || input.semanas.length !== 12) {
-      return {
-        status: "error",
-        error: "La IA no devolvió 12 semanas. Reintenta.",
-      };
-    }
-
-    semanas = input.semanas;
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Error desconocido";
-    return { status: "error", error: `Falló la generación: ${msg}` };
-  }
-
-  // Persiste el plan
-  type PlanRow = { id: string };
-  const { data: plan, error: pError } = await supabase
-    .from("planes_90_dias")
-    .insert({
-      user_id: user.id,
-      diagnostico_id: diagnosticoId,
-      semanas: semanas as unknown as Json,
-      model_used: MODELS.sonnet,
-    })
-    .select("id")
-    .single<PlanRow>();
-
-  if (pError || !plan) {
-    return {
-      status: "error",
-      error: pError?.message ?? "No se pudo guardar el plan",
-    };
+  if (!result.ok) {
+    return { status: "error", error: result.error };
   }
 
   revalidatePath("/dashboard");
-  return { status: "ok", planId: plan.id };
+  return { status: "ok", planId: result.planId };
 }
