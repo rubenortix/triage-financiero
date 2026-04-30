@@ -6,6 +6,7 @@ import {
   ArrowRight,
   LogOut,
   Sparkles,
+  Calculator,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
@@ -237,16 +238,46 @@ export default async function DashboardPage() {
           </>
         )}
 
-        <Card className="border-dashed">
-          <CardHeader>
-            <CardTitle>Próximamente</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground space-y-1">
-            <p>· Simulador deuda vs inversión</p>
-            <p>· Asistente IA conversacional</p>
-            <p>· Email mensual con tu evolución</p>
-          </CardContent>
-        </Card>
+        {/* Simuladores */}
+        <section>
+          <h2 className="text-xl font-semibold tracking-tight mb-4">
+            Simuladores
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calculator className="h-4 w-4 text-brand-600" />
+                  Deuda vs Inversión
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Si tienes excedente y deuda al mismo tiempo, qué te conviene
+                  más a 10 años.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <Button asChild variant="outline">
+                  <Link href="/simuladores/deuda-vs-inversion">
+                    Abrir simulador
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+            <Card className="border-dashed">
+              <CardHeader>
+                <CardTitle className="text-muted-foreground">
+                  Más simuladores · próximamente
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground space-y-1">
+                <p>· Inmueble vs ahorro</p>
+                <p>· Cuándo puedo retirarme</p>
+                <p>· Asistente IA conversacional</p>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
       </main>
     </>
   );
