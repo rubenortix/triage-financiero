@@ -20,7 +20,6 @@ export function DiagnosticoForm() {
 
   const pregunta = PREGUNTAS[step];
   const seleccionada = respuestas[pregunta.id];
-  const progreso = ((step + 1) / TOTAL_PREGUNTAS) * 100;
   const esUltima = step === TOTAL_PREGUNTAS - 1;
   const todasContestadas = PREGUNTAS.every((p) => respuestas[p.id]);
 
@@ -60,33 +59,50 @@ export function DiagnosticoForm() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Barra de progreso */}
-      <div>
-        <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-          <span>
-            Pregunta {step + 1} de {TOTAL_PREGUNTAS}
+    <div className="space-y-10">
+      {/* Header del paso — número grande mono + categoría */}
+      <div key={`head-${pregunta.id}`} className="fade-up flex items-baseline justify-between gap-4">
+        <div className="flex items-baseline gap-3">
+          <span className="font-mono text-4xl font-medium tabular-nums text-brand-700">
+            {String(step + 1).padStart(2, "0")}
           </span>
-          <span>{pregunta.categoria}</span>
+          <span className="font-mono text-sm text-muted-foreground">
+            / {String(TOTAL_PREGUNTAS).padStart(2, "0")}
+          </span>
         </div>
-        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-          <div
-            className="h-full bg-brand-600 transition-all duration-300"
-            style={{ width: `${progreso}%` }}
-          />
-        </div>
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          {pregunta.categoria}
+        </p>
       </div>
 
-      {/* Pregunta */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-semibold leading-snug tracking-tight">
-          {pregunta.pregunta}
-        </h1>
+      {/* Progress dots */}
+      <div className="flex gap-1.5" aria-hidden="true">
+        {PREGUNTAS.map((p, i) => (
+          <span
+            key={p.id}
+            className={cn(
+              "h-1 flex-1 rounded-full transition-colors duration-300",
+              i < step
+                ? "bg-brand-700"
+                : i === step
+                  ? "bg-brand-700"
+                  : "bg-rule",
+            )}
+          />
+        ))}
       </div>
+
+      {/* Pregunta — italic serif dramático */}
+      <h1
+        key={`q-${pregunta.id}`}
+        className="fade-up font-serif italic text-3xl sm:text-4xl lg:text-5xl tracking-tight leading-[1.15] text-foreground"
+      >
+        {pregunta.pregunta}
+      </h1>
 
       {/* Opciones */}
-      <div className="space-y-3">
-        {pregunta.opciones.map((op) => {
+      <div className="space-y-3" key={`opts-${pregunta.id}`}>
+        {pregunta.opciones.map((op, i) => {
           const activa = seleccionada === op.letra;
           return (
             <button
@@ -94,31 +110,35 @@ export function DiagnosticoForm() {
               type="button"
               onClick={() => seleccionar(op.letra)}
               className={cn(
-                "w-full text-left rounded-lg border-2 p-4 transition-colors",
-                "hover:border-brand-400 hover:bg-brand-50",
+                "fade-up w-full text-left rounded-lg border-2 p-5 transition-all duration-200",
+                "hover:border-brand-400 hover:bg-brand-50/40",
                 activa
-                  ? "border-brand-600 bg-brand-50 ring-2 ring-brand-200"
+                  ? "border-brand-700 bg-brand-50/60 shadow-sm"
                   : "border-border bg-card",
+                i === 0 && "fade-up-delay-1",
+                i === 1 && "fade-up-delay-2",
+                i === 2 && "fade-up-delay-3",
               )}
+              style={{ animationDelay: `${100 * (i + 1)}ms` }}
             >
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-4">
                 <div
                   className={cn(
-                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 mt-0.5",
+                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 mt-0.5 transition-colors",
                     activa
-                      ? "border-brand-600 bg-brand-600 text-white"
-                      : "border-border",
+                      ? "border-brand-700 bg-brand-700 text-white"
+                      : "border-border bg-card",
                   )}
                 >
                   {activa ? (
-                    <Check className="h-3.5 w-3.5" />
+                    <Check className="h-4 w-4" strokeWidth={2.5} />
                   ) : (
-                    <span className="text-xs font-medium text-muted-foreground">
+                    <span className="font-mono text-xs font-medium text-muted-foreground">
                       {op.letra.toUpperCase()}
                     </span>
                   )}
                 </div>
-                <span className="text-base leading-relaxed text-foreground">
+                <span className="text-base sm:text-lg leading-relaxed text-foreground pt-0.5">
                   {op.texto}
                 </span>
               </div>
@@ -128,7 +148,7 @@ export function DiagnosticoForm() {
       </div>
 
       {/* Navegación */}
-      <div className="flex items-center justify-between pt-4">
+      <div className="flex items-center justify-between pt-6 border-t border-border/60">
         <Button
           type="button"
           variant="ghost"

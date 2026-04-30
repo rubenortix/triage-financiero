@@ -10,16 +10,21 @@ export const metadata = {
 export default function DiagnosticoPage() {
   return (
     <>
-      <header className="border-b border-border">
-        <div className="mx-auto max-w-3xl px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <Activity className="h-5 w-5 text-brand-600" />
+      <header className="border-b border-border/60">
+        <div className="mx-auto max-w-3xl px-6 sm:px-8 h-16 flex items-center justify-between">
+          <Link
+            href="/"
+            className="flex items-center gap-2 font-medium tracking-tight"
+          >
+            <Activity className="h-4 w-4 text-brand-700" />
             <span>Triage Financiero</span>
           </Link>
-          <span className="text-xs text-muted-foreground">Diagnóstico · 3 min</span>
+          <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+            Diagnóstico · 3 min
+          </span>
         </div>
       </header>
-      <main className="mx-auto max-w-3xl px-6 py-10">
+      <main className="mx-auto max-w-3xl px-6 sm:px-8 py-12 sm:py-16">
         <DiagnosticoForm />
       </main>
     </>
