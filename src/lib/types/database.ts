@@ -23,6 +23,8 @@ export interface Database {
           etapa_carrera: "residente" | "consolidado" | "senior" | null;
           is_beta_tester: boolean;
           invitation_code: string | null;
+          welcome_email_sent_at: string | null;
+          ultimo_recordatorio_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -33,6 +35,8 @@ export interface Database {
           etapa_carrera?: "residente" | "consolidado" | "senior" | null;
           is_beta_tester?: boolean;
           invitation_code?: string | null;
+          welcome_email_sent_at?: string | null;
+          ultimo_recordatorio_at?: string | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
