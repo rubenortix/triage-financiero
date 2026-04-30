@@ -21,12 +21,22 @@ export interface Database {
           nombre: string | null;
           pais: string | null;
           etapa_carrera: "residente" | "consolidado" | "senior" | null;
+          is_beta_tester: boolean;
+          invitation_code: string | null;
           created_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["profiles"]["Row"], "created_at"> & {
+        Insert: {
+          id: string;
+          email: string;
+          nombre?: string | null;
+          pais?: string | null;
+          etapa_carrera?: "residente" | "consolidado" | "senior" | null;
+          is_beta_tester?: boolean;
+          invitation_code?: string | null;
           created_at?: string;
         };
-        Update: Partial<Database["public"]["Tables"]["profiles"]["Row"]>;
+        Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
+        Relationships: [];
       };
       arquetipos: {
         Row: {
@@ -43,6 +53,7 @@ export interface Database {
         };
         Insert: Database["public"]["Tables"]["arquetipos"]["Row"];
         Update: Partial<Database["public"]["Tables"]["arquetipos"]["Row"]>;
+        Relationships: [];
       };
       diagnosticos: {
         Row: {
@@ -56,11 +67,19 @@ export interface Database {
           arquetipo_id: number;
           created_at: string;
         };
-        Insert: Omit<
-          Database["public"]["Tables"]["diagnosticos"]["Row"],
-          "id" | "created_at"
-        > & { id?: string; created_at?: string };
-        Update: Partial<Database["public"]["Tables"]["diagnosticos"]["Row"]>;
+        Insert: {
+          id?: string;
+          user_id: string;
+          respuestas: Json;
+          score_liquidez: number;
+          score_diversificacion: number;
+          score_apalancamiento: number;
+          score_total: number;
+          arquetipo_id: number;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["diagnosticos"]["Insert"]>;
+        Relationships: [];
       };
       planes_90_dias: {
         Row: {
@@ -71,11 +90,16 @@ export interface Database {
           model_used: string;
           generated_at: string;
         };
-        Insert: Omit<
-          Database["public"]["Tables"]["planes_90_dias"]["Row"],
-          "id" | "generated_at"
-        > & { id?: string; generated_at?: string };
-        Update: Partial<Database["public"]["Tables"]["planes_90_dias"]["Row"]>;
+        Insert: {
+          id?: string;
+          user_id: string;
+          diagnostico_id: string;
+          semanas: Json;
+          model_used: string;
+          generated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["planes_90_dias"]["Insert"]>;
+        Relationships: [];
       };
       simulaciones: {
         Row: {
@@ -87,11 +111,37 @@ export interface Database {
           interpretacion_ia: string | null;
           created_at: string;
         };
-        Insert: Omit<
-          Database["public"]["Tables"]["simulaciones"]["Row"],
-          "id" | "created_at"
-        > & { id?: string; created_at?: string };
-        Update: Partial<Database["public"]["Tables"]["simulaciones"]["Row"]>;
+        Insert: {
+          id?: string;
+          user_id: string;
+          tipo: string;
+          inputs: Json;
+          output: Json;
+          interpretacion_ia?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["simulaciones"]["Insert"]>;
+        Relationships: [];
+      };
+      conversaciones_ia: {
+        Row: {
+          id: string;
+          user_id: string;
+          mensajes: Json;
+          tokens_consumidos: number;
+          started_at: string;
+          ended_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          mensajes?: Json;
+          tokens_consumidos?: number;
+          started_at?: string;
+          ended_at?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["conversaciones_ia"]["Insert"]>;
+        Relationships: [];
       };
       suscripciones: {
         Row: {
@@ -106,15 +156,49 @@ export interface Database {
           created_at: string;
           updated_at: string;
         };
-        Insert: Omit<
-          Database["public"]["Tables"]["suscripciones"]["Row"],
-          "id" | "created_at" | "updated_at"
-        > & { id?: string; created_at?: string; updated_at?: string };
-        Update: Partial<Database["public"]["Tables"]["suscripciones"]["Row"]>;
+        Insert: {
+          id?: string;
+          user_id: string;
+          provider: "stripe" | "mercadopago" | "dlocal";
+          provider_subscription_id: string;
+          status: "trialing" | "active" | "canceled" | "past_due";
+          tier: "pro" | "premium" | "circulo";
+          trial_ends_at?: string | null;
+          current_period_end?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["suscripciones"]["Insert"]>;
+        Relationships: [];
+      };
+      eventos: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          evento: string;
+          properties: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          evento: string;
+          properties?: Json;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["eventos"]["Insert"]>;
+        Relationships: [];
       };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
-    Enums: Record<string, never>;
+    Enums: {
+      etapa_carrera: "residente" | "consolidado" | "senior";
+      nivel_diagnostico: "Vulnerabilidad" | "Estabilidad" | "Optimización";
+      subscription_provider: "stripe" | "mercadopago" | "dlocal";
+      subscription_status: "trialing" | "active" | "canceled" | "past_due";
+      subscription_tier: "pro" | "premium" | "circulo";
+    };
+    CompositeTypes: Record<string, never>;
   };
 }

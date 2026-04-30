@@ -1,13 +1,24 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Activity, AlertCircle, TrendingUp, Wallet, Target, Coins } from "lucide-react";
+import {
+  Activity,
+  AlertCircle,
+  TrendingUp,
+  Wallet,
+  Target,
+  Coins,
+  LogIn,
+  LogOut,
+} from "lucide-react";
 import { calcularDiagnostico, decodeRespuestas } from "@/lib/data/scoring";
 import { calcularCincoNumeros, type Color } from "@/lib/data/cinco-numeros";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DISCLAIMER_IA } from "@/lib/anthropic";
+import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
+import { GuardarButton } from "./_components/guardar-button";
 
 interface Props {
   searchParams: Promise<{ r?: string }>;
@@ -17,9 +28,8 @@ export const metadata = { title: "Tu resultado" };
 
 export default async function ResultadoPage({ searchParams }: Props) {
   const { r } = await searchParams;
-
   const respuestas = r ? decodeRespuestas(r) : null;
-  if (!respuestas) {
+  if (!respuestas || !r) {
     redirect("/diagnostico");
   }
 
@@ -32,6 +42,11 @@ export default async function ResultadoPage({ searchParams }: Props) {
     scoreTotal: resultado.scoreTotal,
   });
 
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <>
       <header className="border-b border-border">
@@ -40,9 +55,26 @@ export default async function ResultadoPage({ searchParams }: Props) {
             <Activity className="h-5 w-5 text-brand-600" />
             <span>Triage Financiero</span>
           </Link>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/diagnostico">Volver a hacer</Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href="/diagnostico">Volver a hacer</Link>
+            </Button>
+            {user ? (
+              <form action="/auth/logout" method="post">
+                <Button type="submit" variant="ghost" size="sm">
+                  <LogOut className="h-4 w-4" />
+                  Salir
+                </Button>
+              </form>
+            ) : (
+              <Button asChild variant="ghost" size="sm">
+                <Link href={`/login?next=${encodeURIComponent(`/resultado?r=${r}`)}`}>
+                  <LogIn className="h-4 w-4" />
+                  Entrar
+                </Link>
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -146,24 +178,61 @@ export default async function ResultadoPage({ searchParams }: Props) {
           </div>
         </section>
 
+        {/* CTA — depende de auth state */}
+        {user ? (
+          <section className="rounded-lg border-2 border-dashed border-border bg-muted/30 p-8 text-center">
+            <h3 className="text-2xl font-semibold tracking-tight">
+              Guarda este resultado
+            </h3>
+            <p className="mt-2 text-muted-foreground max-w-xl mx-auto leading-relaxed">
+              Lo verás en tu dashboard junto a tus próximos rediagnósticos para
+              medir tu evolución.
+            </p>
+            <div className="mt-6 flex justify-center">
+              <GuardarButton encoded={r} />
+            </div>
+          </section>
+        ) : (
+          <section className="rounded-lg border-2 border-dashed border-border bg-muted/30 p-8 text-center">
+            <h3 className="text-2xl font-semibold tracking-tight">
+              Guarda tu progreso
+            </h3>
+            <p className="mt-2 text-muted-foreground max-w-xl mx-auto leading-relaxed">
+              Crea tu cuenta gratis y vuelve a medir tu pulso cada 30 días para
+              ver cómo evoluciona. Sin contraseñas, solo tu email.
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <Button asChild size="lg">
+                <Link
+                  href={`/login?next=${encodeURIComponent(`/resultado?r=${r}`)}`}
+                >
+                  Crear cuenta gratis
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" size="lg">
+                <Link href="/">Volver al inicio</Link>
+              </Button>
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Sin tarjeta · Sin spam · Cancela cuando quieras
+            </p>
+          </section>
+        )}
+
         {/* Plan 90 días — preview bloqueado */}
-        <section className="rounded-lg border-2 border-dashed border-border bg-muted/30 p-8 text-center">
+        <section className="rounded-lg border border-border bg-card p-8 text-center">
           <h3 className="text-2xl font-semibold tracking-tight">
             Tu Plan 90 días personalizado
           </h3>
           <p className="mt-2 text-muted-foreground max-w-xl mx-auto leading-relaxed">
             12 semanas, una acción concreta cada semana, generadas por IA según
-            tu arquetipo y etapa de carrera. Disponible en el plan Pro.
+            tu arquetipo. Disponible próximamente en el plan Pro.
           </p>
-          <div className="mt-6 flex items-center justify-center gap-3">
-            <Button size="lg">Empezar trial Pro de 15 días</Button>
-            <Button variant="ghost" size="lg" asChild>
-              <Link href="/">Volver al inicio</Link>
+          <div className="mt-6">
+            <Button size="lg" disabled>
+              Próximamente · $29/mes
             </Button>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            $29/mes · 15 días gratis · Cancela cuando quieras
-          </p>
         </section>
 
         {/* Disclaimer */}
