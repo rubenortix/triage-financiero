@@ -1,7 +1,9 @@
 -- ============================================
--- Triage Financiero — Schema inicial
+-- Triage Financiero — Schema inicial (idempotente)
 -- Versión: 0.1.0
 -- Fecha: 2026-04-29
+--
+-- Este archivo se puede correr múltiples veces sin error.
 -- ============================================
 
 -- =====================
@@ -10,18 +12,32 @@
 create extension if not exists "uuid-ossp";
 
 -- =====================
--- Enums
+-- Enums (idempotentes vía DO blocks)
 -- =====================
-create type etapa_carrera as enum ('residente', 'consolidado', 'senior');
-create type nivel_diagnostico as enum ('Vulnerabilidad', 'Estabilidad', 'Optimización');
-create type subscription_provider as enum ('stripe', 'mercadopago', 'dlocal');
-create type subscription_status as enum ('trialing', 'active', 'canceled', 'past_due');
-create type subscription_tier as enum ('pro', 'premium', 'circulo');
+do $$ begin
+  create type etapa_carrera as enum ('residente', 'consolidado', 'senior');
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create type nivel_diagnostico as enum ('Vulnerabilidad', 'Estabilidad', 'Optimización');
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create type subscription_provider as enum ('stripe', 'mercadopago', 'dlocal');
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create type subscription_status as enum ('trialing', 'active', 'canceled', 'past_due');
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create type subscription_tier as enum ('pro', 'premium', 'circulo');
+exception when duplicate_object then null; end $$;
 
 -- =====================
 -- profiles (extiende auth.users)
 -- =====================
-create table public.profiles (
+create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null unique,
   nombre text,
@@ -32,13 +48,13 @@ create table public.profiles (
   created_at timestamptz not null default now()
 );
 
-create index idx_profiles_email on public.profiles(email);
-create index idx_profiles_pais on public.profiles(pais);
+create index if not exists idx_profiles_email on public.profiles(email);
+create index if not exists idx_profiles_pais on public.profiles(pais);
 
 -- =====================
 -- arquetipos (tabla maestra, 27 filas)
 -- =====================
-create table public.arquetipos (
+create table if not exists public.arquetipos (
   id integer primary key,
   codigo text not null unique,
   nombre text not null,
@@ -53,9 +69,9 @@ create table public.arquetipos (
 );
 
 -- =====================
--- diagnosticos (cada respuesta del cuestionario)
+-- diagnosticos
 -- =====================
-create table public.diagnosticos (
+create table if not exists public.diagnosticos (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references public.profiles(id) on delete cascade,
   respuestas jsonb not null,
@@ -67,12 +83,12 @@ create table public.diagnosticos (
   created_at timestamptz not null default now()
 );
 
-create index idx_diagnosticos_user_created on public.diagnosticos(user_id, created_at desc);
+create index if not exists idx_diagnosticos_user_created on public.diagnosticos(user_id, created_at desc);
 
 -- =====================
--- planes_90_dias (output IA del plan)
+-- planes_90_dias
 -- =====================
-create table public.planes_90_dias (
+create table if not exists public.planes_90_dias (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references public.profiles(id) on delete cascade,
   diagnostico_id uuid not null references public.diagnosticos(id) on delete cascade,
@@ -81,12 +97,12 @@ create table public.planes_90_dias (
   generated_at timestamptz not null default now()
 );
 
-create index idx_planes_user on public.planes_90_dias(user_id, generated_at desc);
+create index if not exists idx_planes_user on public.planes_90_dias(user_id, generated_at desc);
 
 -- =====================
--- simulaciones (resultados de simuladores)
+-- simulaciones
 -- =====================
-create table public.simulaciones (
+create table if not exists public.simulaciones (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references public.profiles(id) on delete cascade,
   tipo text not null,
@@ -96,12 +112,12 @@ create table public.simulaciones (
   created_at timestamptz not null default now()
 );
 
-create index idx_simulaciones_user_tipo on public.simulaciones(user_id, tipo, created_at desc);
+create index if not exists idx_simulaciones_user_tipo on public.simulaciones(user_id, tipo, created_at desc);
 
 -- =====================
--- conversaciones_ia (chat asistente)
+-- conversaciones_ia
 -- =====================
-create table public.conversaciones_ia (
+create table if not exists public.conversaciones_ia (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references public.profiles(id) on delete cascade,
   mensajes jsonb not null default '[]'::jsonb,
@@ -110,12 +126,12 @@ create table public.conversaciones_ia (
   ended_at timestamptz
 );
 
-create index idx_conversaciones_user on public.conversaciones_ia(user_id, started_at desc);
+create index if not exists idx_conversaciones_user on public.conversaciones_ia(user_id, started_at desc);
 
 -- =====================
--- suscripciones (agnóstico de proveedor)
+-- suscripciones
 -- =====================
-create table public.suscripciones (
+create table if not exists public.suscripciones (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references public.profiles(id) on delete cascade,
   provider subscription_provider not null,
@@ -129,12 +145,12 @@ create table public.suscripciones (
   unique (provider, provider_subscription_id)
 );
 
-create index idx_suscripciones_user_status on public.suscripciones(user_id, status);
+create index if not exists idx_suscripciones_user_status on public.suscripciones(user_id, status);
 
 -- =====================
--- eventos (analytics propio)
+-- eventos
 -- =====================
-create table public.eventos (
+create table if not exists public.eventos (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references public.profiles(id) on delete set null,
   evento text not null,
@@ -142,8 +158,8 @@ create table public.eventos (
   created_at timestamptz not null default now()
 );
 
-create index idx_eventos_evento_created on public.eventos(evento, created_at desc);
-create index idx_eventos_user_created on public.eventos(user_id, created_at desc);
+create index if not exists idx_eventos_evento_created on public.eventos(evento, created_at desc);
+create index if not exists idx_eventos_user_created on public.eventos(user_id, created_at desc);
 
 -- ============================================
 -- Row Level Security
@@ -155,58 +171,74 @@ alter table public.simulaciones enable row level security;
 alter table public.conversaciones_ia enable row level security;
 alter table public.suscripciones enable row level security;
 alter table public.eventos enable row level security;
-
--- arquetipos es tabla maestra pública (lectura libre)
 alter table public.arquetipos enable row level security;
+
+-- arquetipos lectura pública
+drop policy if exists "arquetipos lectura pública" on public.arquetipos;
 create policy "arquetipos lectura pública" on public.arquetipos
   for select using (true);
 
--- profiles: cada usuario lee/escribe el suyo
+-- profiles
+drop policy if exists "profiles select propio" on public.profiles;
 create policy "profiles select propio" on public.profiles
   for select using (auth.uid() = id);
+drop policy if exists "profiles update propio" on public.profiles;
 create policy "profiles update propio" on public.profiles
   for update using (auth.uid() = id);
+drop policy if exists "profiles insert propio" on public.profiles;
 create policy "profiles insert propio" on public.profiles
   for insert with check (auth.uid() = id);
 
--- diagnosticos: cada usuario lee/inserta los suyos
+-- diagnosticos
+drop policy if exists "diagnosticos select propio" on public.diagnosticos;
 create policy "diagnosticos select propio" on public.diagnosticos
   for select using (auth.uid() = user_id);
+drop policy if exists "diagnosticos insert propio" on public.diagnosticos;
 create policy "diagnosticos insert propio" on public.diagnosticos
   for insert with check (auth.uid() = user_id);
 
--- planes_90_dias: cada usuario lee/inserta los suyos
+-- planes_90_dias
+drop policy if exists "planes select propio" on public.planes_90_dias;
 create policy "planes select propio" on public.planes_90_dias
   for select using (auth.uid() = user_id);
+drop policy if exists "planes insert propio" on public.planes_90_dias;
 create policy "planes insert propio" on public.planes_90_dias
   for insert with check (auth.uid() = user_id);
 
--- simulaciones: cada usuario lee/inserta las suyas
+-- simulaciones
+drop policy if exists "simulaciones select propio" on public.simulaciones;
 create policy "simulaciones select propio" on public.simulaciones
   for select using (auth.uid() = user_id);
+drop policy if exists "simulaciones insert propio" on public.simulaciones;
 create policy "simulaciones insert propio" on public.simulaciones
   for insert with check (auth.uid() = user_id);
 
--- conversaciones_ia: cada usuario lee/inserta/actualiza las suyas
+-- conversaciones_ia
+drop policy if exists "conversaciones select propio" on public.conversaciones_ia;
 create policy "conversaciones select propio" on public.conversaciones_ia
   for select using (auth.uid() = user_id);
+drop policy if exists "conversaciones insert propio" on public.conversaciones_ia;
 create policy "conversaciones insert propio" on public.conversaciones_ia
   for insert with check (auth.uid() = user_id);
+drop policy if exists "conversaciones update propio" on public.conversaciones_ia;
 create policy "conversaciones update propio" on public.conversaciones_ia
   for update using (auth.uid() = user_id);
 
--- suscripciones: lectura propia (la escritura va vía service role en webhooks)
+-- suscripciones (la escritura va vía service role en webhooks)
+drop policy if exists "suscripciones select propio" on public.suscripciones;
 create policy "suscripciones select propio" on public.suscripciones
   for select using (auth.uid() = user_id);
 
--- eventos: insert libre (con o sin user), select solo propio
+-- eventos
+drop policy if exists "eventos insert libre" on public.eventos;
 create policy "eventos insert libre" on public.eventos
   for insert with check (true);
+drop policy if exists "eventos select propio" on public.eventos;
 create policy "eventos select propio" on public.eventos
   for select using (auth.uid() = user_id);
 
 -- ============================================
--- Trigger para crear profile automáticamente al registrarse
+-- Trigger: crear profile automáticamente al registrarse
 -- ============================================
 create or replace function public.handle_new_user()
 returns trigger
@@ -216,17 +248,19 @@ set search_path = public
 as $$
 begin
   insert into public.profiles (id, email)
-  values (new.id, new.email);
+  values (new.id, new.email)
+  on conflict (id) do nothing;
   return new;
 end;
 $$;
 
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
 -- ============================================
--- Trigger para updated_at en suscripciones
+-- Trigger: updated_at en suscripciones
 -- ============================================
 create or replace function public.set_updated_at()
 returns trigger
@@ -238,6 +272,7 @@ begin
 end;
 $$;
 
+drop trigger if exists set_suscripciones_updated_at on public.suscripciones;
 create trigger set_suscripciones_updated_at
   before update on public.suscripciones
   for each row execute function public.set_updated_at();
