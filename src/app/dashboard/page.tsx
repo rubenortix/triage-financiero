@@ -15,13 +15,19 @@ import { Badge } from "@/components/ui/badge";
 import { getArquetipoById } from "@/lib/data/arquetipos";
 import { GenerarPlanButton } from "./_components/generar-plan-button";
 import { PlanCard, type SemanaPlan } from "./_components/plan-card";
+import { ComparativaCard } from "./_components/comparativa-card";
+import type { ResumenEvolucion } from "@/lib/ia/generar-resumen-rediagnostico";
 
 export const metadata = { title: "Dashboard" };
 
 type DiagnosticoRow = {
   id: string;
   score_total: number;
+  score_liquidez: number;
+  score_diversificacion: number;
+  score_apalancamiento: number;
   arquetipo_id: number;
+  resumen_evolucion: ResumenEvolucion | null;
   created_at: string;
 };
 
@@ -42,16 +48,19 @@ export default async function DashboardPage() {
     redirect("/login?next=/dashboard");
   }
 
-  // Carga últimos diagnósticos
+  // Carga últimos diagnósticos con todos los ejes y el resumen_evolucion
   const { data: diagnosticos } = await supabase
     .from("diagnosticos")
-    .select("id, score_total, arquetipo_id, created_at")
+    .select(
+      "id, score_total, score_liquidez, score_diversificacion, score_apalancamiento, arquetipo_id, resumen_evolucion, created_at",
+    )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(5)
     .returns<DiagnosticoRow[]>();
 
   const ultimo = diagnosticos?.[0];
+  const anterior = diagnosticos?.[1];
   const arquetipoUltimo = ultimo ? getArquetipoById(ultimo.arquetipo_id) : null;
 
   // Carga el plan asociado al último diagnóstico (si existe)
@@ -156,6 +165,17 @@ export default async function DashboardPage() {
                 </Link>
               </Button>
             </section>
+
+            {/* Comparativa de re-diagnóstico — solo cuando hay 2+ */}
+            {anterior && (
+              <section>
+                <ComparativaCard
+                  anterior={anterior}
+                  actual={ultimo}
+                  resumen={ultimo.resumen_evolucion}
+                />
+              </section>
+            )}
 
             {/* Plan 90 días */}
             <section>

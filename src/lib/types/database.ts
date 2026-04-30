@@ -65,6 +65,7 @@ export interface Database {
           score_apalancamiento: number;
           score_total: number;
           arquetipo_id: number;
+          resumen_evolucion: Json | null;
           created_at: string;
         };
         Insert: {
@@ -76,6 +77,7 @@ export interface Database {
           score_apalancamiento: number;
           score_total: number;
           arquetipo_id: number;
+          resumen_evolucion?: Json | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["diagnosticos"]["Insert"]>;

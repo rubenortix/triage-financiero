@@ -4,10 +4,21 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { calcularDiagnostico, decodeRespuestas } from "@/lib/data/scoring";
+import {
+  generarResumenRediagnostico,
+  type ResumenEvolucion,
+} from "@/lib/ia/generar-resumen-rediagnostico";
+import type { Json } from "@/lib/types/database";
 
 export type GuardarDiagnosticoState =
   | { status: "idle" }
-  | { status: "ok"; id: string }
+  | {
+      status: "ok";
+      id: string;
+      esRediagnostico: boolean;
+      /** Si fue re-diagnóstico, indica si el resumen IA se generó OK */
+      resumenGenerado: boolean;
+    }
   | { status: "error"; error: string };
 
 export async function guardarDiagnostico(
@@ -34,7 +45,23 @@ export async function guardarDiagnostico(
 
   const resultado = calcularDiagnostico(respuestas);
 
-  const { data, error } = await supabase
+  // 1. Busca el diagnóstico previo más reciente (si existe)
+  type DiagnosticoPrevio = {
+    id: string;
+    arquetipo_id: number;
+    score_total: number;
+  };
+  const { data: previo } = await supabase
+    .from("diagnosticos")
+    .select("id, arquetipo_id, score_total")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<DiagnosticoPrevio>();
+
+  // 2. Inserta el nuevo diagnóstico
+  type NuevoDiagnostico = { id: string };
+  const { data: nuevo, error } = await supabase
     .from("diagnosticos")
     .insert({
       user_id: user.id,
@@ -46,12 +73,45 @@ export async function guardarDiagnostico(
       arquetipo_id: resultado.arquetipo.id,
     })
     .select("id")
-    .single();
+    .single<NuevoDiagnostico>();
 
-  if (error) {
-    return { status: "error", error: error.message };
+  if (error || !nuevo) {
+    return {
+      status: "error",
+      error: error?.message ?? "No se pudo guardar el diagnóstico",
+    };
+  }
+
+  const esRediagnostico = previo !== null;
+  let resumenGenerado = false;
+
+  // 3. Si es re-diagnóstico, genera resumen IA y lo guarda en la nueva fila
+  if (previo) {
+    const resumen = await generarResumenRediagnostico({
+      diagnosticoAnteriorId: previo.id,
+      diagnosticoAnteriorArquetipoId: previo.arquetipo_id,
+      diagnosticoAnteriorScoreTotal: previo.score_total,
+      diagnosticoActualArquetipoId: resultado.arquetipo.id,
+      diagnosticoActualScoreTotal: resultado.scoreTotal,
+    });
+
+    if (resumen.ok) {
+      const resumenData: ResumenEvolucion = resumen.resumen;
+      await supabase
+        .from("diagnosticos")
+        .update({ resumen_evolucion: resumenData as unknown as Json })
+        .eq("id", nuevo.id);
+      resumenGenerado = true;
+    }
+    // Si falla, sigue adelante — el diagnóstico está guardado, lo del resumen
+    // es complementario y se puede regenerar después.
   }
 
   revalidatePath("/dashboard");
-  return { status: "ok", id: data.id };
+  return {
+    status: "ok",
+    id: nuevo.id,
+    esRediagnostico,
+    resumenGenerado,
+  };
 }
