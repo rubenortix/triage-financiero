@@ -7,6 +7,7 @@ import {
   LogOut,
   Sparkles,
   Calculator,
+  MessageCircle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
@@ -299,10 +300,30 @@ export default async function DashboardPage() {
           </>
         )}
 
-        {/* Simuladores */}
+        {/* Herramientas */}
         <section className="fade-up">
-          <SectionLabel>Simuladores</SectionLabel>
+          <SectionLabel>Herramientas</SectionLabel>
           <div className="grid gap-4 sm:grid-cols-2">
+            <Card className="bg-card border-border/80">
+              <CardHeader>
+                <CardTitle className="font-serif italic text-xl flex items-center gap-2 tracking-tight">
+                  <MessageCircle className="h-4 w-4 text-brand-700" />
+                  Asistente Triage
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Pregúntale dudas sobre tu arquetipo o conceptos financieros
+                  básicos. Conoce tu contexto.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <Button asChild variant="outline">
+                  <Link href="/asistente">
+                    Abrir chat
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
             <Card className="bg-card border-border/80">
               <CardHeader>
                 <CardTitle className="font-serif italic text-xl flex items-center gap-2 tracking-tight">
@@ -323,19 +344,10 @@ export default async function DashboardPage() {
                 </Button>
               </CardContent>
             </Card>
-            <Card className="border-dashed border-border/80">
-              <CardHeader>
-                <CardTitle className="font-serif italic text-xl text-muted-foreground tracking-tight">
-                  Próximamente
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground space-y-1">
-                <p>· Inmueble vs ahorro</p>
-                <p>· Cuándo puedo retirarme</p>
-                <p>· Asistente IA conversacional</p>
-              </CardContent>
-            </Card>
           </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Próximamente: simulador inmueble vs ahorro · simulador retiro · email mensual con tu evolución
+          </p>
         </section>
       </main>
     </>
