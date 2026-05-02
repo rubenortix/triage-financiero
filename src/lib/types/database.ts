@@ -199,6 +199,24 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["eventos"]["Insert"]>;
         Relationships: [];
       };
+      invitation_codes: {
+        Row: {
+          code: string;
+          nombre_invitado: string | null;
+          used_by: string | null;
+          used_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          code: string;
+          nombre_invitado?: string | null;
+          used_by?: string | null;
+          used_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["invitation_codes"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

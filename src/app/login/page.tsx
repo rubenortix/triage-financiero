@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Activity } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { BETA_GATE_ENABLED } from "@/lib/security/invitation";
 import { LoginForm } from "./_components/login-form";
 
 export const metadata = { title: "Entrar" };
@@ -45,7 +46,7 @@ export default async function LoginPage({ searchParams }: Props) {
         )}
 
         <div className="mt-8">
-          <LoginForm next={next} />
+          <LoginForm next={next} betaGate={BETA_GATE_ENABLED} />
         </div>
 
         <p className="mt-8 text-center text-xs text-muted-foreground">

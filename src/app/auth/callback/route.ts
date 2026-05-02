@@ -1,6 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { enviarWelcome } from "@/lib/email/send";
+import {
+  BETA_GATE_ENABLED,
+  INVITATION_COOKIE,
+  consumeInvitationCode,
+} from "@/lib/security/invitation";
 
 /**
  * Endpoint que recibe el redirect del magic link de Supabase.
@@ -53,6 +59,16 @@ export async function GET(request: NextRequest) {
       enviarWelcome({ to: profile.email, nombre: profile.nombre }).catch(() => {
         // Log silencioso — un welcome fallido no rompe la auth
       });
+    }
+
+    // Beta gate: consume el código de invitación si lo había en cookie
+    if (BETA_GATE_ENABLED) {
+      const cookieStore = await cookies();
+      const code = cookieStore.get(INVITATION_COOKIE)?.value;
+      if (code) {
+        await consumeInvitationCode({ code, userId: user.id });
+        cookieStore.delete(INVITATION_COOKIE);
+      }
     }
   }
 
