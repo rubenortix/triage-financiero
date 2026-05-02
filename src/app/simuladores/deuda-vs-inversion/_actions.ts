@@ -12,6 +12,7 @@ import {
   type InputDeudaVsInversion,
   type OutputDeudaVsInversion,
 } from "@/lib/data/simuladores";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 import type { Json } from "@/lib/types/database";
 
 const schema = z.object({
@@ -66,6 +67,15 @@ export async function simularDeudaVsInversion(
   } = await supabase.auth.getUser();
   if (!user) {
     redirect("/login?next=/simuladores/deuda-vs-inversion");
+  }
+
+  // Rate limit (la simulación llama a Claude para interpretación)
+  const rl = await checkRateLimit(supabase, user.id, "simulador");
+  if (!rl.ok) {
+    return {
+      status: "error",
+      error: `Estás simulando muy seguido. Espera ${rl.retryAfterSeconds}s.`,
+    };
   }
 
   // Trae el arquetipo del usuario para contextualizar la interpretación IA

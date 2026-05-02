@@ -3,7 +3,11 @@
  * Mantiene la voz de marca Triage: médica, empática, directa.
  *
  * Cada email incluye disclaimer regulatorio y un footer mínimo.
+ *
+ * SEGURIDAD: cualquier dato dinámico del usuario (nombre, arquetipo, etc.)
+ * se pasa por escapeHtml() antes de embeber en HTML para prevenir injection.
  */
+import { escapeHtml } from "@/lib/security/escape";
 
 const BRAND = "Triage Financiero";
 const SITE_URL =
@@ -59,7 +63,8 @@ function shell(content: string): string {
 // =============================================================
 
 export function welcomeEmail(args: { nombre?: string | null }): BaseEmail {
-  const saludo = args.nombre ? `Hola, ${args.nombre}` : "Bienvenido";
+  const nombreSafe = escapeHtml(args.nombre);
+  const saludo = nombreSafe ? `Hola, ${nombreSafe}` : "Bienvenido";
   const subject = "Tu primera consulta de Triage está lista";
 
   const html = shell(`
@@ -109,13 +114,15 @@ export function recordatorioMensualEmail(args: {
   arquetipoNombre: string;
   nivel: "Vulnerabilidad" | "Estabilidad" | "Optimización";
 }): BaseEmail {
-  const saludo = args.nombre ? `Hola, ${args.nombre}` : "Hola";
+  const nombreSafe = escapeHtml(args.nombre);
+  const arquetipoSafe = escapeHtml(args.arquetipoNombre);
+  const saludo = nombreSafe ? `Hola, ${nombreSafe}` : "Hola";
   const subject = `Han pasado ${args.diasDesdeUltimo} días — ¿cómo va tu pulso?`;
 
   const html = shell(`
     <h1>${saludo}.</h1>
     <p>Han pasado <strong>${args.diasDesdeUltimo} días</strong> desde tu último diagnóstico Triage.</p>
-    <p>Tu último pulso fue <strong>${args.scoreActual}/10</strong> (${args.nivel}) y caíste en el arquetipo <em>${args.arquetipoNombre}</em>.</p>
+    <p>Tu último pulso fue <strong>${args.scoreActual}/10</strong> (${args.nivel}) y caíste en el arquetipo <em>${arquetipoSafe}</em>.</p>
     <p>Mide tu pulso de nuevo — es lo único que te dice si tu plan está funcionando o si es momento de ajustar.</p>
     <p style="text-align: center;">
       <a class="button" href="${SITE_URL}/diagnostico">Volver a hacer triage</a>

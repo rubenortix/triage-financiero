@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { generarPlan90Dias as generarPlanCore } from "@/lib/ia/generar-plan-90-dias";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 
 export type GenerarPlanState =
   | { status: "idle" }
@@ -30,6 +31,15 @@ export async function generarPlan90Dias(
   } = await supabase.auth.getUser();
   if (!user) {
     redirect("/login");
+  }
+
+  // Rate limit (control de costo por usuario)
+  const rl = await checkRateLimit(supabase, user.id, "plan_90_dias");
+  if (!rl.ok) {
+    return {
+      status: "error",
+      error: `Demasiadas regeneraciones seguidas. Espera ${rl.retryAfterSeconds}s.`,
+    };
   }
 
   // Carga el diagnóstico (RLS garantiza que solo accede a los propios)

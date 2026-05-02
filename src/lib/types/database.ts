@@ -25,6 +25,8 @@ export interface Database {
           invitation_code: string | null;
           welcome_email_sent_at: string | null;
           ultimo_recordatorio_at: string | null;
+          ai_calls_minute_count: number;
+          ai_calls_minute_window_start: string | null;
           created_at: string;
         };
         Insert: {
@@ -37,6 +39,8 @@ export interface Database {
           invitation_code?: string | null;
           welcome_email_sent_at?: string | null;
           ultimo_recordatorio_at?: string | null;
+          ai_calls_minute_count?: number;
+          ai_calls_minute_window_start?: string | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;

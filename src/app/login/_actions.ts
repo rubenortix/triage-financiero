@@ -6,7 +6,13 @@ import { createClient } from "@/lib/supabase/server";
 
 const schema = z.object({
   email: z.string().email("Email inválido"),
-  next: z.string().optional(),
+  next: z
+    .string()
+    .optional()
+    .refine(
+      (n) => !n || (n.startsWith("/") && !n.startsWith("//")),
+      { message: "Ruta de redirección inválida" },
+    ),
 });
 
 export type SendMagicLinkState =

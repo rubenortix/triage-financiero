@@ -6,6 +6,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getArquetipoById } from "@/lib/data/arquetipos";
 import { pedirRespuestaAsistente, type MensajeChat } from "@/lib/ia/asistente";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 import type { Json } from "@/lib/types/database";
 
 const schema = z.object({
@@ -44,6 +45,15 @@ export async function enviarMensaje(
   } = await supabase.auth.getUser();
   if (!user) {
     redirect("/login?next=/asistente");
+  }
+
+  // Rate limit antes de llamar a Anthropic (control de costo)
+  const rl = await checkRateLimit(supabase, user.id, "asistente");
+  if (!rl.ok) {
+    return {
+      status: "error",
+      error: `Estás escribiendo muy rápido. Espera ${rl.retryAfterSeconds}s y reintenta.`,
+    };
   }
 
   // Carga arquetipo del último diagnóstico (para contextualizar)

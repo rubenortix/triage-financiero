@@ -8,6 +8,7 @@ import {
   generarResumenRediagnostico,
   type ResumenEvolucion,
 } from "@/lib/ia/generar-resumen-rediagnostico";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 import type { Json } from "@/lib/types/database";
 
 export type GuardarDiagnosticoState =
@@ -87,6 +88,19 @@ export async function guardarDiagnostico(
 
   // 3. Si es re-diagnóstico, genera resumen IA y lo guarda en la nueva fila
   if (previo) {
+    // Rate limit antes de llamar a Claude
+    const rl = await checkRateLimit(supabase, user.id, "rediagnostico");
+    if (!rl.ok) {
+      // Diagnóstico ya quedó guardado. Solo saltamos el resumen IA.
+      revalidatePath("/dashboard");
+      return {
+        status: "ok",
+        id: nuevo.id,
+        esRediagnostico: true,
+        resumenGenerado: false,
+      };
+    }
+
     const resumen = await generarResumenRediagnostico({
       diagnosticoAnteriorId: previo.id,
       diagnosticoAnteriorArquetipoId: previo.arquetipo_id,

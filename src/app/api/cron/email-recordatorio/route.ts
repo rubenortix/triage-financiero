@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { timingSafeEqual } from "node:crypto";
 import { getArquetipoById } from "@/lib/data/arquetipos";
 import { enviarRecordatorioMensual } from "@/lib/email/send";
 import { nivelDeScore } from "@/lib/data/scoring";
@@ -18,9 +19,18 @@ import { nivelDeScore } from "@/lib/data/scoring";
  *        http://localhost:3000/api/cron/email-recordatorio
  */
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get("authorization");
-  const expected = `Bearer ${process.env.CRON_SECRET ?? ""}`;
-  if (!process.env.CRON_SECRET || authHeader !== expected) {
+  // Auth con comparación timing-safe — evita leak del secret carácter a carácter
+  if (!process.env.CRON_SECRET) {
+    return NextResponse.json(
+      { error: "CRON_SECRET no configurado en este entorno" },
+      { status: 500 },
+    );
+  }
+  const authHeader = request.headers.get("authorization") ?? "";
+  const expected = `Bearer ${process.env.CRON_SECRET}`;
+  const a = Buffer.from(authHeader);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
