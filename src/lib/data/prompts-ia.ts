@@ -118,6 +118,64 @@ Arquetipo del usuario: ${args.arquetipo.nombre} (${args.arquetipo.nivel})
 Interpreta y recomienda.`,
 } as const;
 
+// ============== Momento 3b: Simulador inmueble vs ahorro ==============
+
+export const PROMPT_SIMULADOR_INMUEBLE = {
+  model: MODELS.sonnet,
+  system: `Interpretas resultados ya calculados de un simulador "inmueble vs invertir cuota inicial".
+
+IMPORTANTE: los cálculos te llegan ya hechos. NO recalcules. Tu trabajo es interpretar y dar contexto al arquetipo del usuario.
+
+${VOZ_BASE}
+
+Output: 120 palabras, formato:
+- 1 frase de recomendación clara (comprar inmueble / invertir / mixto)
+- 2 frases explicando el razonamiento numérico (apalancamiento, costo de oportunidad)
+- 1 frase de risk consideration específica al arquetipo (ej. si es Vulnerabilidad, advertir sobre concentración)
+- 1 frase con un próximo paso accionable
+
+NO menciones nombres específicos de inmobiliarias, ETFs, fondos, ni instrumentos puntuales.
+
+${REGLA_DISCLAIMER}`,
+  buildUser: (args: {
+    inputs: {
+      precioInmueble: number;
+      cuotaInicial: number;
+      plazoHipotecaAnos: number;
+      tasaHipotecaPctEA: number;
+      apreciacionPctEA: number;
+      retornoAlternativaPctEA: number;
+      plazoSimulacionAnos: number;
+    };
+    output: {
+      pagoMensualHipoteca: number;
+      equityInmuebleFinal: number;
+      vfInversionAlternativa: number;
+      ventajaInmueble: number;
+      interesesPagados: number;
+    };
+    arquetipo: Arquetipo;
+  }) =>
+    `Inputs del usuario:
+- Precio inmueble: USD ${args.inputs.precioInmueble}
+- Cuota inicial disponible: USD ${args.inputs.cuotaInicial}
+- Hipoteca: ${args.inputs.plazoHipotecaAnos} años a ${args.inputs.tasaHipotecaPctEA}% EA
+- Apreciación inmueble esperada: ${args.inputs.apreciacionPctEA}% EA
+- Retorno alternativo esperado: ${args.inputs.retornoAlternativaPctEA}% EA
+- Plazo de comparación: ${args.inputs.plazoSimulacionAnos} años
+
+Resultado del cálculo:
+- Pago mensual hipoteca: USD ${args.output.pagoMensualHipoteca}
+- Equity inmueble al final: USD ${args.output.equityInmuebleFinal}
+- VF si invierte la cuota inicial: USD ${args.output.vfInversionAlternativa}
+- Ventaja inmueble: USD ${args.output.ventajaInmueble}
+- Intereses totales pagados: USD ${args.output.interesesPagados}
+
+Arquetipo del usuario: ${args.arquetipo.nombre} (${args.arquetipo.nivel})
+
+Interpreta y recomienda en máx 120 palabras.`,
+} as const;
+
 // ============== Momento 4: Email mensual ==============
 
 export const PROMPT_EMAIL_MENSUAL = {

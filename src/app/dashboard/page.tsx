@@ -8,6 +8,9 @@ import {
   Sparkles,
   Calculator,
   MessageCircle,
+  Home as HomeIcon,
+  Stethoscope,
+  LineChart,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
@@ -127,22 +130,62 @@ export default async function DashboardPage() {
         </section>
 
         {!ultimo ? (
-          <section className="rounded-lg border-2 border-dashed border-brand-200 bg-brand-50/30 p-10 text-center fade-up fade-up-delay-1">
-            <p className="text-xs uppercase tracking-[0.2em] text-brand-700 mb-3">
-              Primer paso
-            </p>
-            <h2 className="font-serif italic text-3xl sm:text-4xl tracking-tight leading-tight">
-              Aún no tienes diagnóstico.
-            </h2>
-            <p className="mt-3 text-muted-foreground max-w-md mx-auto">
-              Empieza con 10 preguntas. 3 minutos. Cero jerga financiera.
-            </p>
-            <Button asChild size="lg" className="mt-6">
-              <Link href="/diagnostico">
-                Hacer mi diagnóstico
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
+          <section className="fade-up fade-up-delay-1 space-y-8">
+            <div className="rounded-lg border-2 border-brand-200 bg-brand-50/30 p-8 sm:p-12">
+              <p className="text-xs uppercase tracking-[0.2em] text-brand-700 mb-3">
+                Bienvenido — primer paso
+              </p>
+              <h2 className="font-serif italic text-3xl sm:text-5xl tracking-tight leading-[1.05]">
+                Empecemos por
+                <br />
+                <span className="not-italic font-sans font-medium text-foreground/80">
+                  tu diagnóstico inicial.
+                </span>
+              </h2>
+              <p className="mt-4 text-base text-muted-foreground max-w-xl leading-relaxed">
+                10 preguntas en 3 minutos. Nada de cuentas bancarias, nada de
+                números exactos — solo elecciones múltiples sobre tu situación.
+                Al final ves tu pulso patrimonial y un Plan 90 días generado
+                para ti.
+              </p>
+              <Button asChild size="lg" className="mt-8 text-base h-12 px-7">
+                <Link href="/diagnostico">
+                  Empezar mi diagnóstico
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Tus respuestas se guardan en tu cuenta. Puedes re-diagnosticar
+                cada 30 días para medir cómo evolucionas.
+              </p>
+            </div>
+
+            {/* Lo que vas a recibir — 3 pasos */}
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-4">
+                Lo que vas a recibir
+              </p>
+              <div className="grid sm:grid-cols-3 gap-4">
+                <PasoCard
+                  numero="01"
+                  icon={<Stethoscope className="h-5 w-5" />}
+                  titulo="Pulso patrimonial"
+                  texto="Score 0–10 con tus signos vitales: liquidez, diversificación, apalancamiento. Un arquetipo de los 27 del Mapa Triage."
+                />
+                <PasoCard
+                  numero="02"
+                  icon={<Sparkles className="h-5 w-5" />}
+                  titulo="Plan 90 días"
+                  texto="Claude Sonnet escribe 12 semanas con una acción concreta cada semana, calibrada a tu arquetipo y etapa de carrera."
+                />
+                <PasoCard
+                  numero="03"
+                  icon={<LineChart className="h-5 w-5" />}
+                  titulo="Evolución mensual"
+                  texto="Cada 30 días vuelves a medir tu pulso. Ves cómo cambió tu score, qué mejoró, y obtienes un nuevo plan."
+                />
+              </div>
+            </div>
           </section>
         ) : (
           <>
@@ -303,50 +346,31 @@ export default async function DashboardPage() {
         {/* Herramientas */}
         <section className="fade-up">
           <SectionLabel>Herramientas</SectionLabel>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Card className="bg-card border-border/80">
-              <CardHeader>
-                <CardTitle className="font-serif italic text-xl flex items-center gap-2 tracking-tight">
-                  <MessageCircle className="h-4 w-4 text-brand-700" />
-                  Asistente Triage
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Pregúntale dudas sobre tu arquetipo o conceptos financieros
-                  básicos. Conoce tu contexto.
-                </p>
-              </CardHeader>
-              <CardContent>
-                <Button asChild variant="outline">
-                  <Link href="/asistente">
-                    Abrir chat
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-            <Card className="bg-card border-border/80">
-              <CardHeader>
-                <CardTitle className="font-serif italic text-xl flex items-center gap-2 tracking-tight">
-                  <Calculator className="h-4 w-4 text-brand-700" />
-                  Deuda vs Inversión
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Si tienes excedente y deuda al mismo tiempo, qué te conviene
-                  más a 10 años.
-                </p>
-              </CardHeader>
-              <CardContent>
-                <Button asChild variant="outline">
-                  <Link href="/simuladores/deuda-vs-inversion">
-                    Abrir simulador
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <HerramientaCard
+              icon={<MessageCircle className="h-4 w-4 text-brand-700" />}
+              titulo="Asistente Triage"
+              descripcion="Pregúntale dudas sobre tu arquetipo o conceptos financieros básicos. Conoce tu contexto."
+              href="/asistente"
+              cta="Abrir chat"
+            />
+            <HerramientaCard
+              icon={<Calculator className="h-4 w-4 text-brand-700" />}
+              titulo="Deuda vs Inversión"
+              descripcion="Si tienes excedente y deuda al mismo tiempo, qué te conviene más a 10 años."
+              href="/simuladores/deuda-vs-inversion"
+              cta="Abrir simulador"
+            />
+            <HerramientaCard
+              icon={<HomeIcon className="h-4 w-4 text-brand-700" />}
+              titulo="Inmueble vs Ahorro"
+              descripcion="Comprar inmueble con financiamiento vs invertir la cuota inicial al retorno alternativo."
+              href="/simuladores/inmueble-vs-ahorro"
+              cta="Abrir simulador"
+            />
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            Próximamente: simulador inmueble vs ahorro · simulador retiro · email mensual con tu evolución
+            Próximamente: simulador retiro/independencia · email mensual con tu evolución
           </p>
         </section>
       </main>
@@ -359,6 +383,73 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-4">
       {children}
     </p>
+  );
+}
+
+function PasoCard({
+  numero,
+  icon,
+  titulo,
+  texto,
+}: {
+  numero: string;
+  icon: React.ReactNode;
+  titulo: string;
+  texto: string;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-5">
+      <div className="flex items-center justify-between">
+        <div className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-brand-50 text-brand-700">
+          {icon}
+        </div>
+        <span className="font-mono text-xs tracking-widest text-muted-foreground">
+          {numero}
+        </span>
+      </div>
+      <h3 className="mt-4 font-serif italic text-xl tracking-tight">
+        {titulo}
+      </h3>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+        {texto}
+      </p>
+    </div>
+  );
+}
+
+function HerramientaCard({
+  icon,
+  titulo,
+  descripcion,
+  href,
+  cta,
+}: {
+  icon: React.ReactNode;
+  titulo: string;
+  descripcion: string;
+  href: string;
+  cta: string;
+}) {
+  return (
+    <Card className="bg-card border-border/80">
+      <CardHeader>
+        <CardTitle className="font-serif italic text-xl flex items-center gap-2 tracking-tight">
+          {icon}
+          {titulo}
+        </CardTitle>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          {descripcion}
+        </p>
+      </CardHeader>
+      <CardContent>
+        <Button asChild variant="outline">
+          <Link href={href}>
+            {cta}
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
